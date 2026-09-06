@@ -1,9 +1,14 @@
 # Secrets & config
 .env
 
-# Package stuff
-pnpm-lock.yaml
+# Installed package dir
 node_modules
+
+# Package lockfile (npm)
+package-lock.json
+
+# Package lockfile (pnpm)
+pnpm-lock.yaml
 
 # Prisoner list
 prisoners.json
