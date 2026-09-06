@@ -15,6 +15,10 @@ const client = new Discord.Client({
 	]
 });
 
+function err(e: string): void {
+	console.error(styleText(['red', 'bold'], e))
+}
+
 async function reply(act: Discord.ChatInputCommandInteraction, msg: string) {
 	return act.reply({ content: msg, flags: Discord.MessageFlags.Ephemeral })
 }
@@ -32,6 +36,26 @@ client.on('clientReady', async () => {
 	});
 	console.log(styleText(['green', 'bold'], 'Logged in as ' + client.user!.tag));
 });
+
+if (process.env.REIMPRISON_ON_REJOIN === 'yes') {
+	client.on('guildMemberAdd', async member => {
+	for (let i of prisoners) {
+		if (i !== member.id) return
+		try {
+			member.roles.add(process.env.PRISONER_ROLE_ID!)
+			if (process.env.REG_USER_ROLE_ID !== undefined) member.roles.remove(process.env.REG_USR_ROLE_ID!)
+			for (const channel of (await member.guild?.channels.fetch()!).values()) {
+				if (!channel || !channel?.isTextBased()) continue;
+				const fetchedMsgs = await channel.messages.fetch({ limit: 100 });
+				try {await channel.bulkDelete(fetchedMsgs.filter(m => m.author.id === i));}
+				catch {/* There most likely won't be any new messages, so we don't need to send or log an error */}
+			}
+			} catch {
+				err('An error occurred')
+			}
+		}
+	})
+}
 
 client.on('interactionCreate', async act => {
 	try {
@@ -83,7 +107,7 @@ client.on('interactionCreate', async act => {
 			}
 			await reply(act, '@' + list.join(', @'))
 		}
-	} catch (e) {console.error(styleText(['red', 'bold'], (e as Error).stack!))}
+	} catch (e) {err((e as Error).stack!)}
 });
 
 client.login(process.env.BOT_TOKEN)
